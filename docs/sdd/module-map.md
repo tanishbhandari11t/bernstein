@@ -13,6 +13,7 @@ Full per-file module map. `AGENTS.md`'s own "Module map" section links here inst
 | `dataclass_helpers.py`      | Helpers for preserving dataclass instance types through updates |
 | `defaults.py`               | Centralized default values for the Bernstein orchestrator |
 | `diff_paths.py`             | Which repository-relative paths a unified diff touches |
+| `finding_verify.py`         | FindingVerifyReceipt - lineage-attested receipts for finding verify results |
 | `instrumentation.py`        | Wave-3 per-agent instrumentation: LLM calls, tool calls, and conversation history |
 | `parallel_admission.py`     | Parallel-execution admission from a code graph (#3237, scope step 3) |
 | `path_scope.py`             | Which repository-relative paths fall outside a set of globs |
@@ -126,12 +127,14 @@ Full per-file module map. `AGENTS.md`'s own "Module map" section links here inst
 | `council_runner.py`         | Task-level "council of agents" runner |
 | `cursor.py`                 | Cursor Agent CLI adapter |
 | `devin_terminal.py`         | Devin for Terminal (Cognition) CLI adapter |
+| `draft.py`                  | Drafting helper for adapter capability profiles |
 | `droid.py`                  | Droid (Factory AI) CLI adapter |
 | `env_isolation.py`          | Environment variable isolation for spawned agents |
 | `floor_refresh.py`          | Adapter security-floor refresh pipeline with signed update receipts (#2515) |
 | `forge.py`                  | Forge CLI adapter |
 | `gemini.py`                 | Google Gemini / Antigravity CLI adapter |
 | `generic.py`                | Generic CLI adapter for arbitrary coding agent CLIs |
+| `gitleaks.py`               | Deterministic Gitleaks scanner adapter and SARIF normalization |
 | `goose.py`                  | Goose CLI adapter for Bernstein |
 | `goose_stream_parser.py`    | Parse Goose ``--output-format stream-json`` events |
 | `gptme.py`                  | gptme CLI adapter |
@@ -168,6 +171,10 @@ Full per-file module map. `AGENTS.md`'s own "Module map" section links here inst
 | `registry.py`               | Adapter registry - look up CLI adapters by name |
 | `report.py`                 | Adapter conformance + capability report |
 | `rovo.py`                   | Atlassian Rovo Dev CLI adapter |
+| `scanner.py`                | Scanner adapter contract (issue #3617, slice 2 of #2953) |
+| `scanner_conformance.py`    | Scanner adapter conformance suite harness |
+| `scanner_finding.py`        | Scanner Finding dataclass |
+| `scanner_registry.py`       | Scanner registry - look up scanner adapters by name |
 | `security_floor.py`         | Adapter security-floor spawn preflight with signed refusal receipts (#2515) |
 | `session_id.py`             | Deterministic session-id binding for adapter replay isolation |
 | `skills_injector.py`        | Inject per-task Claude Code skills into the worktree before spawn |
@@ -346,6 +353,7 @@ Full per-file module map. `AGENTS.md`'s own "Module map" section links here inst
 | `toast.py`                | TUI-009: Notification toast for events |
 | `tokens.py`               | Per-agent token usage tracker - lightweight thread-safe token accounting |
 | `vim_mode.py`             | TUI-014: Vim-mode keybindings for TUI navigation |
+| `volunteer_browser.py`    |  |
 | `widgets.py`              | Custom Textual widgets for the Bernstein TUI |
 | `worker_badges.py`        | Worker badge identity module - format worker metadata into Rich badge strings |
 | `worktree_status.py`      | Compact runtime and worktree health pane for the Bernstein TUI |

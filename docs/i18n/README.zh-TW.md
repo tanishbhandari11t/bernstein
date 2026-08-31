@@ -117,7 +117,7 @@ bernstein verify receipt .sdd/runs/<run_id>/run-receipt.json  # verify it offlin
 排程器為什麼是純 Python，以及這換來什麼代價：[為什麼確定性](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md)。
 
 ### 日常命令
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 完整的操作介面（PR 自動化、定時任務、聊天橋接、autofix 守護行程）見[操作命令](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md)。
 
+`bernstein workflow` 執行由代理、命令和迴圈節點組成的宣告式 YAML DAG——支援在執行中斷後續跑：
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+執行狀態會在每個節點將檢查點寫入 `.sdd/runs/<run_id>/`。續跑會在執行開始時驗證清單摘要，因此規格變更會被拒絕，而非靜默執行另一份不同的清單。見[工作流程清單](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md)。
+
 儲存庫衛生門禁：`bernstein readme-l10n verify` 會讓翻譯版 README 偏離英文來源的 PR 失敗（並指出過期的章節），`bernstein readme-l10n sync` 在英文修改後重新綁定它們。見 [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md)。
 
 ### 支援的代理
@@ -138,6 +147,18 @@ bernstein stop                    # graceful shutdown with drain
 Claude Code、Codex CLI、Gemini CLI、GitHub Copilot CLI、Cursor、Aider、Goose、Muse Code、OpenAI Agents SDK、Amp、Cody、Continue、Devin Terminal、Junie、Kilo、Kiro、AWS Q Developer、Ollama、OpenCode、OpenHands、Open Interpreter、gptme、Plandex、AIChat、Letta Code、Qwen 等等。[介面卡索引](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md)為其中 30 個提供安裝命令。`bernstein integrations list` 從 `src/bernstein/adapters/registry.py` 中的登錄檔列舉全部 51 個已接線整合，該檔案是「什麼能解析」的唯一事實來源。其中 49 個是可選擇的代理介面卡，另外兩列是 `mock` 測試樁和 `self-hosted-endpoints` 端點設定檔。任何帶 `--prompt` 旗標的其他工具都可以透過通用包裝器運作。
 
 在同一執行中混用代理：用便宜的本地模型處理樣板，用更重的雲端模型處理架構。`bernstein integrations list --installed` 顯示你的機器上可用的內容。
+
+### 志願算力
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+專案可以把 issue 標記為向志願者開放，任何人都可以在自己的機器上執行其中一個，不需要帳號，也不需要協調者。任務被允許做什麼，由專案在 `volunteer.json` 清單中宣告 —— 沙箱後端、允許存取的網路清單、掛鐘時間與記憶體上限 —— 而捐助者自己的限制只能把它收緊，永遠不能放寬。已完成任務產生的回執把結果綁定到它執行時所依據的隔離決策上，因此維護者在數月之後仍能核對這項工作當時究竟被允許觸碰什麼。
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[捐助者指南](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) 講執行 worker 以及你設定的預算，[專案指南](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) 講宣告清單，[威脅模型](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) 說明每一層邊界防護什麼、不防護什麼。單一指令的執行器尚未發布：目前可用的子指令是 `verify`、`browse` 和 `hub`。
 
 ### 首頁之外
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

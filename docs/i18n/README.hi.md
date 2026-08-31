@@ -117,7 +117,7 @@ bernstein verify receipt .sdd/runs/<run_id>/run-receipt.json  # verify it offlin
 शेड्यूलर सादा Python क्यों है, और इसके बदले क्या छोड़ा गया: [क्यों डिटर्मिनिस्टिक](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md)।
 
 ### रोज़मर्रा के कमांड
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 पूरा ऑपरेटर सरफ़ेस (PR ऑटोमेशन, शेड्यूल, चैट ब्रिज, autofix डीमन) [ऑपरेटर कमांड](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md) में है।
 
+`bernstein workflow` एजेंट, कमांड और लूप नोड्स के घोषणात्मक YAML DAG चलाता है - अधूरे रह गए रन को दोबारा शुरू करने के समर्थन के साथ:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+रन अवस्था हर नोड पर `.sdd/runs/<run_id>/` में चेकपॉइंट होती है। रन दोबारा शुरू करते समय मैनिफ़ेस्ट डाइजेस्ट को रन की शुरुआत में सत्यापित किया जाता है, इसलिए स्पेसिफ़िकेशन में हुए बदलाव को अस्वीकार कर दिया जाता है, बजाय इसके कि किसी अलग मैनिफ़ेस्ट को चुपचाप चला दिया जाए। देखिए [वर्कफ़्लो मैनिफ़ेस्ट](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md)।
+
 रिपॉज़िटरी हाइजीन गेट: `bernstein readme-l10n verify` उस PR को फ़ेल करता है जिसके अनूदित README अंग्रेज़ी स्रोत से भटक गए हों (और बासी सेक्शन का नाम बताता है), `bernstein readme-l10n sync` अंग्रेज़ी में बदलाव के बाद उन्हें दोबारा बाँध देता है। देखिए [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md)।
 
 ### समर्थित एजेंट
@@ -138,6 +147,18 @@ bernstein stop                    # graceful shutdown with drain
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen और भी कई। [अडैप्टर इंडेक्स](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) उनमें से 30 के इंस्टॉल कमांड रखता है। `bernstein integrations list` `src/bernstein/adapters/registry.py` से जुड़े हुए सभी 51 इंटीग्रेशन गिनाता है — क्या रिज़ॉल्व होता है, इसका यही इकलौता स्रोत है। उनमें 49 चुनने-योग्य एजेंट अडैप्टर हैं; बाक़ी दो पंक्तियाँ `mock` टेस्ट स्टब और `self-hosted-endpoints` एंडपॉइंट प्रोफ़ाइल हैं। `--prompt` फ़्लैग वाली बाक़ी कोई भी चीज़ जेनेरिक रैपर से चलती है।
 
 एक ही रन में एजेंट मिलाइए: बॉयलरप्लेट के लिए सस्ते लोकल मॉडल, आर्किटेक्चर के लिए भारी क्लाउड मॉडल। `bernstein integrations list --installed` दिखाता है कि आपकी मशीन पर क्या उपलब्ध है।
+
+### स्वैच्छिक कंप्यूट
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+कोई प्रोजेक्ट अपने issue को स्वयंसेवकों के लिए खुला चिह्नित कर सकता है, और कोई भी उनमें से एक को अपनी ही मशीन पर, बिना खाते और बिना समन्वयक के, चला सकता है। किसी कार्य को क्या करने की अनुमति है, यह प्रोजेक्ट `volunteer.json` मैनिफ़ेस्ट में घोषित करता है - सैंडबॉक्स बैकएंड, अनुमत नेटवर्क सूची, वॉल-क्लॉक और मेमोरी की ऊपरी सीमाएँ - और दाता की अपनी सीमाएँ इसे केवल संकरा कर सकती हैं, कभी चौड़ा नहीं। पूरा हुआ कार्य जो रसीद बनाता है वह परिणाम को उसी नियंत्रण-निर्णय से बाँध देती है जिसके अधीन वह चला, इसलिए अनुरक्षक महीनों बाद भी जाँच सकता है कि उस काम को वास्तव में किसे छूने की अनुमति थी।
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[दाता मार्गदर्शिका](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) वर्कर चलाने और आपके तय किए बजट को कवर करती है, [प्रोजेक्ट मार्गदर्शिका](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) मैनिफ़ेस्ट घोषित करना, और [ख़तरा मॉडल](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) बताता है कि हर सीमा किससे बचाती है और किससे नहीं। एक ही कमांड वाला रनर अभी जारी नहीं हुआ है: आज `verify`, `browse` और `hub` काम करने वाले सब-कमांड हैं।
 
 ### पहले पन्ने से आगे
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

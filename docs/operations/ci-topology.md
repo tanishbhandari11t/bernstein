@@ -27,7 +27,7 @@ after workflow changes merge and opens a squash auto-merge PR when the committed
 | .github/workflows/ci-macos-nightly.yml | CI (macOS nightly) | push, schedule, workflow_dispatch | {"cancel-in-progress": "true", "group": "ci-macos-nightly-${{ github.event_name }}-${{ github.ref }}"} | 2 |
 | .github/workflows/ci-topology-heal.yml | CI topology heal | push, workflow_dispatch | {"cancel-in-progress": "true", "group": "ci-topology-heal"} | 1 |
 | .github/workflows/ci-weekly-digest.yml | CI Weekly Digest | schedule, workflow_dispatch | {"cancel-in-progress": "false", "group": "ci-weekly-digest"} | 1 |
-| .github/workflows/ci.yml | CI | merge_group, pull_request, push, workflow_dispatch | {"cancel-in-progress": "${{ github.event_name == 'pull_request' }}", "group": "ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) \|\| format('branch-{0}-{1}', github.ref, github.sha) }}"} | 33 |
+| .github/workflows/ci.yml | CI | merge_group, pull_request, push, workflow_dispatch | {"cancel-in-progress": "${{ github.event_name == 'pull_request' \|\| (github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'chore(release)') && !startsWith(github.event.head_commit.message, 'release:')) }}", "group": "ci-${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) \|\| (github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'chore(release)') && !startsWith(github.event.head_commit.message, 'release:')) && format('branch-{0}', github.ref) \|\| format('branch-{0}-{1}', github.ref, github.sha) }}"} | 33 |
 | .github/workflows/cifuzz-weekly.yml | CIFuzz (ClusterFuzzLite) | schedule, workflow_dispatch | {"cancel-in-progress": "true", "group": "cifuzz-weekly-${{ github.ref }}"} | 1 |
 | .github/workflows/cleanup-runs.yml | Cleanup Action Runs | workflow_dispatch | {"cancel-in-progress": "false", "group": "cleanup-runs-${{ github.ref }}"} | 1 |
 | .github/workflows/cluster-e2e.yml | cluster-e2e | pull_request, schedule, workflow_dispatch | {"cancel-in-progress": "true", "group": "cluster-e2e-${{ github.ref }}"} | 1 |
@@ -74,6 +74,7 @@ after workflow changes merge and opens a squash auto-merge PR when the committed
 | .github/workflows/trufflehog.yml | trufflehog (secret scanning) | pull_request, push, schedule, workflow_dispatch | {"cancel-in-progress": "${{ github.event_name == 'pull_request' }}", "group": "trufflehog-${{ github.ref }}"} | 1 |
 | .github/workflows/trunk-health-slo.yml | Trunk Health SLO | schedule, workflow_dispatch | {"cancel-in-progress": "true", "group": "trunk-health-slo"} | 1 |
 | .github/workflows/typecheck-ts.yml | TypeScript typecheck | merge_group, pull_request, push | {"cancel-in-progress": "true", "group": "typecheck-ts-${{ github.event.pull_request.number \|\| github.ref }}"} | 1 |
+| .github/workflows/volunteer-verify.yml | Volunteer receipt verification check run | pull_request_target | {"cancel-in-progress": "true", "group": "volunteer-verify-${{ github.event.pull_request.number }}"} | 1 |
 | .github/workflows/zizmor.yml | zizmor (workflow static analysis) | pull_request, push, schedule, workflow_dispatch | {"cancel-in-progress": "${{ github.event_name == 'pull_request' }}", "group": "zizmor-${{ github.ref }}"} | 1 |
 
 ## Check Emitters
@@ -143,6 +144,7 @@ after workflow changes merge and opens a squash auto-merge PR when the committed
 | .github/workflows/trufflehog.yml | trufflehog: trufflehog scan |
 | .github/workflows/trunk-health-slo.yml | compute: Compute trunk red-rate and toggle the andon marker |
 | .github/workflows/typecheck-ts.yml | typecheck: typecheck (${{ matrix.package }}) |
+| .github/workflows/volunteer-verify.yml | verify: Verify volunteer receipt |
 | .github/workflows/zizmor.yml | zizmor: zizmor static analysis |
 
 ## Permissions And Secrets
@@ -212,6 +214,7 @@ after workflow changes merge and opens a squash auto-merge PR when the committed
 | .github/workflows/trufflehog.yml | workflow: {"contents": "read"}<br>trufflehog: {"contents": "read", "pull-requests": "read"} | - |
 | .github/workflows/trunk-health-slo.yml | compute: {"actions": "read", "issues": "write"} | - |
 | .github/workflows/typecheck-ts.yml | workflow: {"contents": "read"}<br>typecheck: {"contents": "read"} | - |
+| .github/workflows/volunteer-verify.yml | verify: {"checks": "write", "contents": "read", "pull-requests": "read"} | GITHUB_TOKEN |
 | .github/workflows/zizmor.yml | workflow: {"contents": "read"}<br>zizmor: {"actions": "read", "contents": "read", "security-events": "write"} | - |
 
 ## Cross-Workflow Calls

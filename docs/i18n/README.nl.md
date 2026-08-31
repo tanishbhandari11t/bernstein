@@ -117,7 +117,7 @@ Elk doel doorloopt vier fasen:
 Waarom de planner in puur Python is geschreven en welke afwegingen daarbij horen: [waarom deterministisch](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### dagelijkse commando's
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 Het volledige beheerderoppervlak (PR-automatisering, planningen, chat-koppelingen, de autofix-daemon) is te vinden in [beheerderscommando's](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+`bernstein workflow` voert declaratieve YAML-DAG's van agent-, commando- en lusknooppunten uit - met ondersteuning voor het hervatten van onderbroken runs:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+De runstatus wordt bij elk knooppunt als checkpoint onder `.sdd/runs/<run_id>/` vastgelegd. Hervatten valideert de manifest-digest bij de start van de run, zodat een wijziging van de specificatie wordt geweigerd in plaats van stilzwijgend een ander manifest uit te voeren. Zie [workflow-manifesten](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Kwaliteitscontroles voor de repository: `bernstein readme-l10n verify` laat een PR falen waarvan de vertaalde README's afwijken van de Engelse bron (met vermelding van de verouderde sectie), `bernstein readme-l10n sync` werkt de koppelingen bij na Engelse wijzigingen. Zie [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### ondersteunde agents
@@ -138,6 +147,18 @@ Kwaliteitscontroles voor de repository: `bernstein readme-l10n verify` laat een 
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen en meer. De [adapterindex](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) bevat installatiecommando's voor 30 ervan. `bernstein integrations list` somt alle 51 ingebouwde integraties op uit `src/bernstein/adapters/registry.py`, de enige bron van waarheid. 49 daarvan zijn selecteerbare agentadapters; de andere twee rijen zijn de teststub `mock` en het eindpuntprofiel `self-hosted-endpoints`. Elk ander programma met een `--prompt`-vlag werkt via de generieke wrapper.
 
 Combineer agents binnen dezelfde run: goedkope lokale modellen voor routinematige code, krachtigere cloudmodellen voor architectuur. `bernstein integrations list --installed` toont wat er beschikbaar is op uw machine.
+
+### vrijwillige rekenkracht
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+Een project kan issues markeren als open voor vrijwilligers, en iedereen kan er een uitvoeren op de eigen machine, zonder account en zonder coördinator. Wat een taak mag doen, verklaart het project in een `volunteer.json`-manifest - sandbox-backend, toegestane netwerklijst, plafonds voor looptijd en geheugen - en de eigen limieten van de donateur kunnen dat alleen versmallen, nooit verruimen. Het ontvangstbewijs van een voltooide taak bindt het resultaat aan de insluitingsbeslissing waaronder het tot stand kwam, zodat een maintainer maanden later kan nagaan waar het werk daadwerkelijk bij mocht.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+De [donateursgids](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) behandelt het draaien van een worker en het budget dat je instelt, de [projectgids](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) behandelt het declareren van een manifest, en het [dreigingsmodel](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) beschrijft waartegen elke grens wel en niet beschermt. De runner met één commando is nog niet uitgebracht: vandaag zijn `verify`, `browse` en `hub` de werkende subcommando's.
 
 ### voorbij de voorpagina
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

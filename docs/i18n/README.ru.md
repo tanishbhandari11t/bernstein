@@ -117,7 +117,7 @@ bernstein verify receipt .sdd/runs/<run_id>/run-receipt.json  # verify it offlin
 Почему планировщик — обычный Python и чем за это платим: [почему детерминизм](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### повседневные команды
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 Полная операторская поверхность (автоматизация PR, расписания, чат-мосты, autofix-демон) — в [командах оператора](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+`bernstein workflow` выполняет декларативные YAML-DAG из узлов agent / command / loop — с поддержкой возобновления прерванных прогонов:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+Контрольные точки прогона попадают в `.sdd/runs/<run_id>/` на каждом узле. Возобновление проверяет хеш манифеста в начале прогона, поэтому изменившаяся спецификация приводит к отказу, а не к молчаливому выполнению другого манифеста. См. [манифесты workflow](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Гейты гигиены репозитория: `bernstein readme-l10n verify` роняет PR, в котором переводы README разошлись с английским источником (называя устаревшую секцию), `bernstein readme-l10n sync` перепривязывает их после правки английского. См. [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### поддерживаемые агенты
@@ -138,6 +147,18 @@ bernstein stop                    # graceful shutdown with drain
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen и другие. В [индексе адаптеров](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) есть команды установки для 30 из них. `bernstein integrations list` перечисляет все 51 встроенную интеграцию из `src/bernstein/adapters/registry.py` — единственного источника правды о том, что резолвится. 49 из них — выбираемые адаптеры агентов; остальные две строки это тестовая заглушка `mock` и профиль эндпоинтов `self-hosted-endpoints`. Всё прочее, у чего есть флаг `--prompt`, работает через универсальную обёртку.
 
 Смешивай агентов в одном прогоне: дешёвые локальные модели на бойлерплейт, тяжёлые облачные — на архитектуру. `bernstein integrations list --installed` покажет, что доступно на твоей машине.
+
+### добровольные вычисления
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+Проект может пометить задачи как открытые для добровольцев, и любой может выполнить одну из них на своей машине без учётной записи и без координатора. Что задаче разрешено делать, проект объявляет в манифесте `volunteer.json` — бэкенд песочницы, список разрешённых сетевых адресов, потолки по времени и памяти, — а собственные лимиты донора могут только сузить это, но не расширить. Квитанция завершённой задачи привязывает результат к тому решению об изоляции, под которым он получен, поэтому сопровождающий и через месяцы может проверить, к чему работа действительно имела доступ.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[Руководство донора](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) описывает запуск воркера и бюджет, который вы задаёте, [руководство проекта](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) — объявление манифеста, а [модель угроз](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) — что каждая граница защищает, а что нет. Запуск одной командой ещё не выпущен: сегодня работают подкоманды `verify`, `browse` и `hub`.
 
 ### за пределами первой страницы
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

@@ -124,6 +124,15 @@ bernstein stop                    # graceful shutdown with drain
 
 The full operator surface (PR automation, schedules, chat bridges, the autofix daemon) is in [operator commands](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+`bernstein workflow` runs declarative YAML DAGs of agent, command, and loop nodes - with resume support for interrupted runs:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+Run state checkpoints to `.sdd/runs/<run_id>/` on every node. Resume validates the manifest digest at run start, so a spec change is refused rather than silently executing a different manifest. See [workflow manifests](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Repository hygiene gates: `bernstein readme-l10n verify` fails a PR whose translated READMEs drifted from the English source (naming the stale section), `bernstein readme-l10n sync` rebinds them after an English edit. See [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### supported agents
@@ -131,6 +140,17 @@ Repository hygiene gates: `bernstein readme-l10n verify` fails a PR whose transl
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen, and more. The [adapter index](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) carries install commands for 30 of them. `bernstein integrations list` enumerates all 51 wired-in integrations from `src/bernstein/adapters/registry.py`, the single source of truth for what resolves. 49 of them are selectable agent adapters; the other two rows are the `mock` test stub and the `self-hosted-endpoints` endpoint profile. Anything else with a `--prompt` flag works through the generic wrapper.
 
 Mix agents in the same run: cheap local models for boilerplate, heavier cloud models for architecture. `bernstein integrations list --installed` shows what is available on your machine.
+
+### volunteer compute
+
+A project can mark issues as open to volunteers, and anyone can run one on their own machine without an account or a coordinator. The project declares what a task is allowed to do in a `volunteer.json` manifest - sandbox backend, network allowlist, wall-clock and memory ceilings - and a donor's own limits can only narrow that, never widen it. The receipt a finished task produces binds the result to the containment decision it ran under, so a maintainer can check months later what the work was actually permitted to touch.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+The [donor guide](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) covers running a worker and the budget you set, the [project guide](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) covers declaring a manifest, and the [threat model](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) states what each boundary does and does not protect. The one-command runner is not shipped yet: `verify`, `browse` and `hub` are the working subcommands today.
 
 ### beyond the front page
 

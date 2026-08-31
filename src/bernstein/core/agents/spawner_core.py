@@ -1251,6 +1251,25 @@ def _render_prompt_with_receipt(
     named_sections: list[tuple[str, str]] = [("role", role_prompt)]
     if specialist_block:
         named_sections.append(("specialists", specialist_block))
+    # Consensus relay section (issue #4678): inject prior cycle decisions for
+    # manager-role spawns only. read_file from the file store; omit the section
+    # entirely when the store is absent, empty, or chain verification fails.
+    if role == "manager":
+        try:
+            from bernstein.core.orchestration.consensus_relay import (
+                MANAGER_RELAY_SECTION,
+                spawn_section_for_workdir,
+            )
+
+            relay_block = spawn_section_for_workdir(workdir)
+            if relay_block:
+                named_sections.append((MANAGER_RELAY_SECTION, relay_block))
+        except Exception as exc:
+            # Never block a spawn because of relay problems - but a section
+            # that silently stops appearing is indistinguishable from a store
+            # that is simply empty, which is how this feature would die
+            # unnoticed.
+            logger.warning("Consensus relay section omitted from manager spawn: %s", exc)
     named_sections.append(("tasks", f"\n## Assigned tasks\n{task_block}"))
     # Artifact contract (#4539): surface the kind/path/criteria an
     # artifact-mode task is judged by. Empty for the git path, so a plain
@@ -1876,6 +1895,8 @@ class AgentSpawner:
         or resume (#4151).
         """
         try:
+            import hashlib
+
             from bernstein.core.communication.task_mailbox import (
                 TaskMailbox,
                 render_mailbox_section,
@@ -1891,14 +1912,6 @@ class AgentSpawner:
 
             pending = []
             for task in tasks:
-                # Compute cursor: highest seq already marked consumed for this task
-                # include_archived: the cursor reasons about linkage across the
-                # retention boundary, so it must see consumption records that
-                # routine `audit archive` has already compressed into
-                # archive/*.jsonl.gz. Without it the cursor silently falls back
-                # to -1 once a segment ages out and the whole backlog is
-                # re-rendered -- the same defect this fix closes, re-armed by
-                # maintenance rather than by a code change.
                 events = chain.query(
                     event_type="task.mailbox_consumed",
                     resource_id=task.id,
@@ -1907,8 +1920,9 @@ class AgentSpawner:
                 cursor = max((int(e.details.get("seq", -1)) for e in events), default=-1)
                 pending.extend(mailbox.pending(task.id, since_seq=cursor))
 
-            # Record consumption for each newly rendered message
             if pending:
+                assembled = render_mailbox_section(pending)
+                prompt_digest = hashlib.sha256(assembled.encode("utf-8")).hexdigest()
                 for msg in pending:
                     chain.log(
                         event_type="task.mailbox_consumed",
@@ -1920,10 +1934,13 @@ class AgentSpawner:
                             "entry_hash": msg.entry_hash,
                             "body_hash": msg.body_hash,
                             "kind": msg.kind,
+                            "prompt_digest": prompt_digest,
                         },
                     )
-
-            return render_mailbox_section(pending)
+                return assembled
+            else:
+                logger.info("No pending mailbox messages for tasks, rendering empty section.")
+                return ""
         except Exception as exc:
             logger.warning("Mailbox section rendering skipped: %s", type(exc).__name__)
             return ""
@@ -2024,6 +2041,14 @@ class AgentSpawner:
         """Wire in the orchestrator's :class:`QualityGatesConfig` (#4393)."""
         self._quality_gate_config = config
 
+    def set_run_id(self, run_id: str) -> None:
+        """Wire in the orchestrator's run id.
+
+        The merge path records a lineage row per landed path and keys those
+        rows by run, so without this the rows have no spine to join.
+        """
+        self._run_id = run_id
+
     def _merge_and_cleanup_worktree(
         self,
         session: AgentSession,
@@ -2045,6 +2070,7 @@ class AgentSpawner:
             merge_worktree_branch_fn=self._merge_worktree_branch,
             merge_queue=self._merge_queue,
             quality_gate_config=self._quality_gate_config,
+            run_id=getattr(self, "_run_id", ""),
         )
 
     def _touch_prespawn_heartbeat(self, session_id: str) -> None:

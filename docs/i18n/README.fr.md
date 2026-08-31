@@ -117,7 +117,7 @@ Chaque objectif franchit quatre étapes :
 Pourquoi l'ordonnanceur est en pur Python et quels sont les compromis associés : [pourquoi déterministe](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### commandes courantes
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 L'ensemble des commandes opérateur (automatisation de PR, planifications, passerelles de discussion, démon d'autofix) est détaillé dans [commandes opérateur](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+`bernstein workflow` exécute des DAGs déclaratifs en YAML composés de nœuds agent, command et loop - avec prise en charge de la reprise pour les exécutions interrompues :
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+L'état d'exécution enregistre un point de contrôle dans `.sdd/runs/<run_id>/` à chaque nœud. La reprise valide l'empreinte du manifeste au démarrage de l'exécution, de sorte qu'une modification de spécification est refusée plutôt que d'exécuter silencieusement un manifeste différent. Consultez [manifestes de workflow](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Contrôles d'hygiène du dépôt : `bernstein readme-l10n verify` invalide une PR dont les READMEs traduits divergent de la source anglaise (en pointant la section obsolète), `bernstein readme-l10n sync` réaligne les liaisons après modification anglaise. Consultez [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### agents pris en charge
@@ -138,6 +147,18 @@ Contrôles d'hygiène du dépôt : `bernstein readme-l10n verify` invalide une P
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen et bien d'autres. L'[index des adaptateurs](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) fournit les commandes d'installation pour 30 d'entre eux. `bernstein integrations list` recense les 51 intégrations actives de `src/bernstein/adapters/registry.py`, référence unique de résolution. 49 constituent des adaptateurs sélectionnables ; les deux autres lignes correspondent au bouchon de test `mock` et au profil `self-hosted-endpoints`. Tout autre outil doté d'une option `--prompt` fonctionne via le wrapper générique.
 
 Combinez différents agents au cours d'une même session : modèles locaux économiques pour le code générique, modèles cloud plus robustes pour l'architecture. `bernstein integrations list --installed` indique les outils disponibles sur votre machine.
+
+### calcul bénévole
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+Un projet peut marquer des tickets comme ouverts aux bénévoles, et n'importe qui peut en exécuter un sur sa propre machine, sans compte ni coordinateur. Le projet déclare ce qu'une tâche a le droit de faire dans un manifeste `volunteer.json` - backend de bac à sable, liste réseau autorisée, plafonds de temps et de mémoire - et les limites propres au donateur ne peuvent que le restreindre, jamais l'élargir. Le reçu produit par une tâche terminée lie le résultat à la décision de confinement sous laquelle elle a tourné, si bien qu'un mainteneur peut vérifier des mois plus tard ce que le travail avait réellement le droit de toucher.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+Le [guide du donateur](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) couvre l'exécution d'un worker et le budget que vous fixez, le [guide du projet](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) couvre la déclaration d'un manifeste, et le [modèle de menaces](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) indique ce que chaque frontière protège et ne protège pas. Le lanceur en une seule commande n'est pas encore livré : aujourd'hui `verify`, `browse` et `hub` sont les sous-commandes qui fonctionnent.
 
 ### au-delà de la page d'accueil
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

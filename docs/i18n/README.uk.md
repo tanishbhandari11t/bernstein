@@ -117,7 +117,7 @@ bernstein verify receipt .sdd/runs/<run_id>/run-receipt.json  # verify it offlin
 Чому планувальник написаний чистою мовою Python і на які компроміси це спирається: [чому детермінізм](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### повсякденні команди
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 Повний набір інструментів оператора (автоматизація PR, розклади, чат-мости, демон автофіксу) описано в [командах оператора](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+`bernstein workflow` виконує декларативні YAML DAG із вузлів agent / command / loop — з підтримкою відновлення перерваних запусків:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+Контрольні точки запуску потрапляють у `.sdd/runs/<run_id>/` на кожному вузлі. Відновлення перевіряє хеш маніфесту на початку запуску, тож змінена специфікація відхиляється, а не мовчки виконується інший маніфест. Дивіться [маніфести workflow](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Гейти гігієни репозиторію: `bernstein readme-l10n verify` блокує PR, перекладені README якого відстали від англійського оригіналу (називаючи застарілий розділ), а `bernstein readme-l10n sync` оновлює зв'язки після змін в англійському тексті. Дивіться [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### підтримувані агенти
@@ -138,6 +147,18 @@ bernstein stop                    # graceful shutdown with drain
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen та інші. [Індекс адаптерів](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) містить команди встановлення для 30 з них. Команда `bernstein integrations list` перелічує всі 51 підключені інтеграції з файлу `src/bernstein/adapters/registry.py`, єдиного джерела істини. 49 з них — це доступні для вибору адаптери агентів; інші два рядки — тестова заглушка `mock` та профіль кінцевих точок `self-hosted-endpoints`. Будь-який інший інструмент із прапорцем `--prompt` працює через універсальну обгортку.
 
 Комбінуйте агентів в одному запуску: дешеві локальні моделі для шаблонного коду, потужніші хмарні моделі для архітектури. Команда `bernstein integrations list --installed` показує, що доступно на вашому комп'ютері.
+
+### добровільні обчислення
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+Проєкт може позначити задачі як відкриті для добровольців, і будь-хто може виконати одну з них на власній машині без облікового запису та без координатора. Що задачі дозволено робити, проєкт оголошує в маніфесті `volunteer.json` — бекенд пісочниці, перелік дозволених мережевих адрес, стелі за часом і пам'яттю, — а власні ліміти донора можуть лише звузити це, але не розширити. Квитанція завершеної задачі прив'язує результат до рішення про ізоляцію, під яким його отримано, тож супровідник і через місяці може перевірити, до чого робота справді мала доступ.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[Посібник донора](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) описує запуск воркера та бюджет, який ви задаєте, [посібник проєкту](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) — оголошення маніфесту, а [модель загроз](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) — що кожна межа захищає, а що ні. Запуск однією командою ще не випущено: сьогодні працюють підкоманди `verify`, `browse` та `hub`.
 
 ### за межами головної сторінки
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

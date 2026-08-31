@@ -117,7 +117,7 @@ Setiap target melalui empat tahapan:
 Mengapa penjadwal menggunakan Python murni dan konsekuensi rancangannya: [mengapa deterministik](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### perintah sehari-hari
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 Seluruh antarmuka operator (otomatisasi PR, jadwal, jembatan obrolan, daemon autofix) terdapat dalam [perintah operator](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+`bernstein workflow` menjalankan DAG YAML deklaratif dari node agent, command, dan loop - dengan dukungan untuk melanjutkan eksekusi yang terinterupsi:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+Status eksekusi disimpan sebagai checkpoint ke `.sdd/runs/<run_id>/` pada setiap node. Melanjutkan eksekusi akan memvalidasi digest manifes pada awal eksekusi, sehingga perubahan spesifikasi akan ditolak, bukan dijalankan diam-diam sebagai manifes yang berbeda. Lihat [manifes workflow](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Gerbang kebersihan repositori: `bernstein readme-l10n verify` menggagalkan PR yang terjemahan README-nya menyimpang dari sumber bahasa Inggris (menyebutkan bagian yang usang), `bernstein readme-l10n sync` mengikat ulang tautan setelah pengeditan bahasa Inggris. Lihat [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### agen yang didukung
@@ -138,6 +147,18 @@ Gerbang kebersihan repositori: `bernstein readme-l10n verify` menggagalkan PR ya
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen, dan banyak lagi. [Indeks adaptor](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) memuat perintah instalasi untuk 30 di antaranya. `bernstein integrations list` menampilkan ke-51 integrasi aktif dari `src/bernstein/adapters/registry.py`, satu-satunya sumber kebenaran. 49 di antaranya adalah adaptor agen yang dapat dipilih; dua baris lainnya adalah stub uji `mock` dan profil endpoint `self-hosted-endpoints`. Alat lain dengan flag `--prompt` dapat berjalan melalui wrapper generik.
 
 Gabungkan berbagai agen dalam satu eksekusi: model lokal hemat biaya untuk kode repetitif, model cloud berkapasitas besar untuk arsitektur. `bernstein integrations list --installed` menampilkan apa saja yang tersedia di mesin Anda.
+
+### komputasi sukarela
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+Sebuah proyek dapat menandai isu sebagai terbuka bagi relawan, dan siapa pun dapat menjalankan salah satunya di mesin sendiri tanpa akun dan tanpa koordinator. Apa yang boleh dilakukan sebuah tugas dideklarasikan proyek dalam manifes `volunteer.json` - backend sandbox, daftar jaringan yang diizinkan, batas atas waktu dan memori - dan batas milik donor hanya dapat mempersempitnya, tidak pernah memperlebarnya. Tanda terima yang dihasilkan tugas yang selesai mengikat hasilnya pada keputusan pengungkungan tempat ia berjalan, sehingga seorang pengelola dapat memeriksa berbulan-bulan kemudian apa yang sebenarnya boleh disentuh oleh pekerjaan itu.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[Panduan donor](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) membahas menjalankan worker dan anggaran yang Anda tetapkan, [panduan proyek](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) membahas mendeklarasikan manifes, dan [model ancaman](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) menyatakan apa yang dilindungi dan tidak dilindungi setiap batas. Peluncur satu perintah belum dirilis: hari ini `verify`, `browse`, dan `hub` adalah subperintah yang berfungsi.
 
 ### di luar halaman utama
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

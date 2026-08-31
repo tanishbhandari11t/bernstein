@@ -117,7 +117,7 @@ bernstein verify receipt .sdd/runs/<run_id>/run-receipt.json  # verify it offlin
 เหตุใดตัวจัดตารางงานจึงเป็น Python ล้วน และสิ่งที่ต้องแลกเปลี่ยน: [ทำไมต้องกำหนดผลลัพธ์แน่นอน](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md)
 
 ### คำสั่งที่ใช้ประจำวัน
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 ชุดคำสั่งผู้ปฏิบัติงานทั้งหมด (การจัดการ PR อัตโนมัติ, ตารางเวลา, ตัวเชื่อมต่อแชท, เดมอน autofix) อยู่ใน [คำสั่งผู้ปฏิบัติงาน](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md)
 
+`bernstein workflow` รัน YAML DAG แบบประกาศโครงสร้างของโหนด agent, command และ loop — พร้อมรองรับการดำเนินการต่อสำหรับการรันที่ถูกขัดจังหวะ:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+สถานะการรันจะบันทึกจุดตรวจสอบไปยัง `.sdd/runs/<run_id>/` ทุกโหนด การดำเนินการต่อจะตรวจสอบค่าแฮชของไฟล์ manifest ตอนเริ่มการรัน ทำให้การเปลี่ยนแปลงสเปกถูกปฏิเสธ แทนที่จะรัน manifest อีกฉบับที่ต่างออกไปโดยไม่แจ้งให้ทราบ ดูที่ [manifest ของ workflow](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md)
+
 เกตสุขอนามัยของที่เก็บโค้ด: `bernstein readme-l10n verify` จะทำให้ PR ที่ไฟล์ README ฉบับแปลคลาดเคลื่อนจากต้นฉบับภาษาอังกฤษล้มเหลว (พร้อมระบุส่วนที่ล้าสมัย) ส่วน `bernstein readme-l10n sync` จะผูกการเชื่อมโยงใหม่หลังจากการแก้ไขภาษาอังกฤษ ดูที่ [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md)
 
 ### เอเจนต์ที่รองรับ
@@ -138,6 +147,18 @@ bernstein stop                    # graceful shutdown with drain
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen และอื่นๆ [ดัชนีอะแดปเตอร์](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) มีคำสั่งติดตั้งสำหรับ 30 รายการในจำนวนนี้ คำสั่ง `bernstein integrations list` แสดงรายการการเชื่อมต่อทั้งหมด 51 รายการจาก `src/bernstein/adapters/registry.py` ซึ่งเป็นแหล่งความจริงเพียงแห่งเดียว โดย 49 รายการเป็นอะแดปเตอร์เอเจนต์ที่เลือกใช้งานได้ ส่วนอีกสองแถวคือตัวทดสอบ `mock` และโปรไฟล์ปลายทาง `self-hosted-endpoints` เครื่องมืออื่นๆ ที่มีแฟล็ก `--prompt` สามารถทำงานผ่านตัวครอบทั่วไปได้
 
 ผสมผสานเอเจนต์ในการรันรอบเดียวกัน: ใช้โมเดลในเครื่องราคาประหยัดสำหรับโค้ดโครงสร้างพื้นฐาน และใช้โมเดลบนคลาวด์ที่ทรงพลังกว่าสำหรับสถาปัตยกรรม คำสั่ง `bernstein integrations list --installed` จะแสดงรายการที่มีอยู่ในเครื่องของคุณ
+
+### การประมวลผลโดยอาสาสมัคร
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+โปรเจกต์สามารถทำเครื่องหมายให้ issue เปิดรับอาสาสมัคร และใครก็ได้สามารถรัน issue นั้นบนเครื่องของตนเองโดยไม่ต้องมีบัญชีและไม่ต้องมีผู้ประสานงาน โปรเจกต์ประกาศสิ่งที่งานหนึ่งได้รับอนุญาตให้ทำไว้ในไฟล์ manifest `volunteer.json` - แบ็กเอนด์แซนด์บ็อกซ์ รายการเครือข่ายที่อนุญาต เพดานเวลาจริงและหน่วยความจำ - ส่วนขีดจำกัดของผู้บริจาคเองทำได้เพียงบีบให้แคบลง ไม่สามารถขยายออกได้ ใบรับที่งานซึ่งเสร็จสิ้นสร้างขึ้นจะผูกผลลัพธ์เข้ากับการตัดสินใจเรื่องการกักกันที่งานนั้นรันอยู่ ผู้ดูแลจึงตรวจสอบได้แม้ผ่านไปหลายเดือนว่างานนั้นได้รับอนุญาตให้แตะต้องสิ่งใดจริง ๆ
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[คู่มือผู้บริจาค](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) ครอบคลุมการรัน worker และงบประมาณที่คุณกำหนด [คู่มือโปรเจกต์](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) ครอบคลุมการประกาศ manifest และ [แบบจำลองภัยคุกคาม](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) ระบุว่าขอบเขตแต่ละชั้นป้องกันอะไรและไม่ป้องกันอะไร ตัวรันแบบคำสั่งเดียวยังไม่ถูกปล่อยออกมา วันนี้คำสั่งย่อยที่ใช้งานได้คือ `verify`, `browse` และ `hub`
 
 ### เนื้อหาเชิงลึกนอกเหนือจากหน้าแรก
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

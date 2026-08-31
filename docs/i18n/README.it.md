@@ -117,7 +117,7 @@ Ogni obiettivo attraversa quattro fasi:
 Perché lo scheduler è in puro Python e quali sono i compromessi adottati: [perché deterministico](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### comandi quotidiani
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 L'intera interfaccia operatore (automazione PR, pianificazioni, bridge di chat, demone autofix) è descritta in [comandi operatore](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+`bernstein workflow` esegue DAG dichiarativi in YAML composti da nodi agent, command e loop - con supporto alla ripresa per le esecuzioni interrotte:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+Lo stato di esecuzione salva un checkpoint in `.sdd/runs/<run_id>/` a ogni nodo. La ripresa convalida il digest del manifesto all'avvio dell'esecuzione, quindi una modifica alla specifica viene rifiutata invece di eseguire silenziosamente un manifesto diverso. Consulta [manifesti dei workflow](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Gate di igiene del repository: `bernstein readme-l10n verify` blocca le PR i cui README tradotti divergono dalla versione inglese (indicando la sezione obsoleta), mentre `bernstein readme-l10n sync` aggiorna i collegamenti dopo modifiche al testo inglese. Consulta [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### agenti supportati
@@ -138,6 +147,18 @@ Gate di igiene del repository: `bernstein readme-l10n verify` blocca le PR i cui
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen e altri ancora. L'[indice degli adapter](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) contiene i comandi di installazione per 30 di essi. `bernstein integrations list` elenca tutte le 51 integrazioni collegate da `src/bernstein/adapters/registry.py`, unica fonte di verità. 49 sono adapter per agenti selezionabili; le altre due righe corrispondono allo stub di test `mock` e al profilo endpoint `self-hosted-endpoints`. Qualsiasi altro strumento dotato di flag `--prompt` funziona tramite il wrapper generico.
 
 Combina agenti diversi nella stessa esecuzione: modelli locali economici per il codice boilerplate, modelli cloud più potenti per le scelte architetturali. `bernstein integrations list --installed` mostra gli strumenti disponibili sul tuo sistema.
+
+### calcolo volontario
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+Un progetto può contrassegnare le issue come aperte ai volontari, e chiunque può eseguirne una sulla propria macchina senza account e senza coordinatore. Il progetto dichiara ciò che a un task è consentito fare in un manifesto `volunteer.json` - backend della sandbox, elenco di rete consentito, tetti di tempo e memoria - e i limiti propri del donatore possono solo restringerlo, mai allargarlo. La ricevuta prodotta da un task completato lega il risultato alla decisione di contenimento sotto cui è girato, così un manutentore può verificare mesi dopo a cosa il lavoro fosse davvero autorizzato ad accedere.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+La [guida del donatore](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) copre l'esecuzione di un worker e il budget che imposti, la [guida del progetto](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) copre la dichiarazione di un manifesto, e il [modello delle minacce](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) indica cosa ciascun confine protegge e cosa no. L'esecutore a comando singolo non è ancora rilasciato: oggi `verify`, `browse` e `hub` sono i sottocomandi funzionanti.
 
 ### oltre la pagina principale
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

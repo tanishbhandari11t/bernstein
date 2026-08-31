@@ -117,7 +117,7 @@ bernstein verify receipt .sdd/runs/<run_id>/run-receipt.json  # verify it offlin
 لماذا تم بناء المجدول بلغة Python الخالصة، وما المقايضات المترتبة على ذلك: [لماذا الحتمية](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### أوامر الاستخدام اليومي
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 واجهة المشغل الكاملة (أتمتة طلبات السحب PR، الجداول الزمنية، جسور المحادثة، برنامج الإصلاح التلقائي autofix) مفصلة في [أوامر المشغل](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+يقوم `bernstein workflow` بتشغيل مخططات DAG تعريفية بصيغة YAML من عقد الوكيل / الأمر / الحلقة - مع دعم الاستئناف للتشغيلات المتوقفة:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+يتم تسجيل نقطة تحقق لحالة التشغيل في `.sdd/runs/<run_id>/` عند كل عقدة. يتحقق الاستئناف من تجزئة البيان عند بدء التشغيل، لذا يتم رفض أي تغيير في المواصفة بدلاً من تنفيذ بيان مختلف بصمت. انظر [بيانات سير العمل](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 بوابات سلامة المستودع: يفشل `bernstein readme-l10n verify` أي طلب سحب تباعدت ملفات README المترجمة فيه عن الأصل الإنجليزي (مع تسمية القسم القديم)، بينما يعيد `bernstein readme-l10n sync` ربطها بعد التعديل الإنجليزي. انظر [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### الوكلاء المدعومون
@@ -138,6 +147,18 @@ bernstein stop                    # graceful shutdown with drain
 Claude Code وCodex CLI وGemini CLI وGitHub Copilot CLI وCursor وAider وGoose وMuse Code وOpenAI Agents SDK وAmp وCody وContinue وDevin Terminal وJunie وKilo وKiro وAWS Q Developer وOllama وOpenCode وOpenHands وOpen Interpreter وgptme وPlandex وAIChat وLetta Code وQwen وغيرهم. يحتوي [فهرس المحولات](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) على أوامر تثبيت لـ 30 منهم. تسرد `bernstein integrations list` جميع عمليات التكامل الـ 51 المتصلة من `src/bernstein/adapters/registry.py`، المصدر الوحيد للحقيقة. 49 منها عبارة عن محولات وكلاء قابلة للاختيار؛ والسطران الآخران هما نموذج الاختبار `mock` وملف تعريف نقطة النهاية `self-hosted-endpoints`. أي أداة أخرى تدعم خيار `--prompt` تعمل من خلال الغلاف العام.
 
 امزج بين الوكلاء في نفس التشغيل: نماذج محلية منخفضة التكلفة للأكواد النمطية، ونماذج سحابية أقوى للأمور المعمارية. يعرض `bernstein integrations list --installed` ما هو متاح على جهازك.
+
+### الحوسبة التطوعية
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+يمكن لمشروع أن يضع على مسائله علامة تفيد بأنها مفتوحة للمتطوعين، ويمكن لأي شخص تشغيل واحدة منها على جهازه الخاص دون حساب ودون منسّق. يعلن المشروع ما يُسمح للمهمة بفعله في بيان `volunteer.json` - الخلفية المستخدمة للعزل، وقائمة الشبكة المسموح بها، وسقفا الزمن والذاكرة - ولا تستطيع حدود المتبرع نفسه إلا تضييق ذلك، لا توسيعه أبدًا. يربط الإيصال الذي تنتجه مهمة منتهية النتيجةَ بقرار الاحتواء الذي جرت تحته، فيستطيع المشرف بعد أشهر أن يتحقق مما كان مسموحًا للعمل فعليًا أن يمسّه.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+يغطي [دليل المتبرع](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) تشغيل العامل والميزانية التي تحددها، ويغطي [دليل المشروع](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) إعلان البيان، ويوضح [نموذج التهديد](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) ما يحميه كل حد وما لا يحميه. لم يُصدر بعد المشغّل ذو الأمر الواحد: الأوامر الفرعية العاملة اليوم هي `verify` و`browse` و`hub`.
 
 ### ما وراء الصفحة الرئيسية
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

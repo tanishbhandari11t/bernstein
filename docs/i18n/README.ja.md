@@ -117,7 +117,7 @@ bernstein verify receipt .sdd/runs/<run_id>/run-receipt.json  # verify it offlin
 スケジューラーが素の Python である理由と、それが何を諦めているかは[なぜ決定論的か](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md)にある。
 
 ### 日常のコマンド
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 オペレーター向けの全機能（PR 自動化、スケジュール、チャットブリッジ、autofix デーモン）は[オペレーターコマンド](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md)にある。
 
+`bernstein workflow` はエージェント / コマンド / ループのノードから成る宣言的 YAML DAG を実行し、中断した実行の再開にも対応する:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+実行状態はノードごとに `.sdd/runs/<run_id>/` にチェックポイントされる。再開は実行開始時にマニフェストのダイジェストを検証するので、仕様が変わっていれば、別のマニフェストを黙って実行するのではなく拒否される。[ワークフローマニフェスト](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md) を参照。
+
 リポジトリ衛生のゲート: `bernstein readme-l10n verify` は、翻訳版 README が英語の原文からずれた PR を（古くなったセクション名を挙げて）失敗させる。`bernstein readme-l10n sync` は英語を編集したあとに束ね直す。[readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md) を参照。
 
 ### 対応エージェント
@@ -138,6 +147,18 @@ bernstein stop                    # graceful shutdown with drain
 Claude Code、Codex CLI、Gemini CLI、GitHub Copilot CLI、Cursor、Aider、Goose、Muse Code、OpenAI Agents SDK、Amp、Cody、Continue、Devin Terminal、Junie、Kilo、Kiro、AWS Q Developer、Ollama、OpenCode、OpenHands、Open Interpreter、gptme、Plandex、AIChat、Letta Code、Qwen ほか。[アダプタ索引](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md)はそのうち 30 個のインストールコマンドを載せている。`bernstein integrations list` は `src/bernstein/adapters/registry.py` から、配線済みの統合 51 件すべてを列挙する。このファイルが「何が解決されるか」の唯一の情報源である。うち 49 件は選択可能なエージェントアダプタで、残り 2 行は `mock` テストスタブと `self-hosted-endpoints` エンドポイントプロファイルである。`--prompt` フラグを持つそれ以外のものは、汎用ラッパー経由で動く。
 
 同じ実行の中でエージェントを混ぜられる。定型作業には安価なローカルモデル、設計には重いクラウドモデルというように。`bernstein integrations list --installed` は自分のマシンで使えるものを表示する。
+
+### ボランティア計算資源
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+プロジェクトは issue をボランティアに開放されているものとして印を付けられ、誰でもその一つを自分のマシンで実行できます。アカウントも調整役も必要ありません。タスクに何を許すかは `volunteer.json` マニフェストで宣言され — サンドボックスのバックエンド、許可するネットワーク先、実時間とメモリの上限 — 提供者自身の制限はそれを狭めることしかできず、広げることはできません。完了したタスクが生む受領書は、結果をそれが動いた封じ込めの決定に結び付けるため、メンテナは数か月後でも、その作業が実際に何に触れることを許されていたかを確認できます。
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[提供者ガイド](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) はワーカーの実行と自分で設定する予算を、[プロジェクトガイド](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) はマニフェストの宣言を、[脅威モデル](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) は各境界が何を守り何を守らないかを扱います。単一コマンドのランナーはまだ出荷されていません。現在動くサブコマンドは `verify`、`browse`、`hub` です。
 
 ### 表紙の先へ
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

@@ -117,7 +117,7 @@ Her hedef dört aşamadan geçer:
 Zamanlayıcının neden saf Python olduğu ve bunun getirdiği ödünleşimler: [neden deterministik](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### günlük komutlar
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 Operatör arayüzünün tamamı (PR otomasyonu, zamanlamalar, sohbet köprüleri, autofix arka plan programı) [operatör komutları](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md) sayfasındadır.
 
+`bernstein workflow`, ajan, komut ve döngü düğümlerinden oluşan bildirimsel YAML DAG'larını çalıştırır - kesintiye uğramış çalıştırmalar için devam ettirme desteğiyle:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+Çalıştırma durumu her düğümde `.sdd/runs/<run_id>/` içine kontrol noktası olarak kaydedilir. Devam ettirme, çalıştırma başında manifest karmasını doğrular; bu nedenle bir spesifikasyon değişikliği, farklı bir manifesti sessizce çalıştırmak yerine reddedilir. Bkz. [workflow manifestleri](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Depo hijyen kapıları: `bernstein readme-l10n verify`, çevrilmiş README'leri İngilizce kaynaktan sapan bir PR'ı başarısız kılar (güncelliğini yitirmiş bölümü adlandırarak); `bernstein readme-l10n sync`, İngilizce düzenlemelerden sonra bunları yeniden bağlar. Bkz. [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### desteklenen ajanlar
@@ -138,6 +147,18 @@ Depo hijyen kapıları: `bernstein readme-l10n verify`, çevrilmiş README'leri 
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen ve daha fazlası. [Adaptör dizini](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) bunlardan 30'u için kurulum komutlarını içerir. `bernstein integrations list`, neyin çözümlendiğine dair tek doğruluk kaynağı olan `src/bernstein/adapters/registry.py` dosyasındaki 51 bağlı entegrasyonun tamamını listeler. Bunların 49'u seçilebilir ajan adaptörleridir; diğer iki satır ise test taslağı `mock` ve uç nokta profili `self-hosted-endpoints`tir. `--prompt` bayrağına sahip diğer her şey genel sarmalayıcı aracılığıyla çalışır.
 
 Aynı çalıştırmada ajanları birleştirin: standart şablon kodlar için ucuz yerel modeller, mimari için daha güçlü bulut modelleri. `bernstein integrations list --installed` makinenizde nelerin mevcut olduğunu gösterir.
+
+### gönüllü işlem gücü
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+Bir proje sorunları gönüllülere açık olarak işaretleyebilir ve herkes bunlardan birini kendi makinesinde, hesap ve koordinatör olmadan çalıştırabilir. Bir görevin ne yapmasına izin verildiğini proje bir `volunteer.json` manifestinde bildirir - sanal alan arka ucu, izin verilen ağ listesi, duvar saati ve bellek tavanları - ve bağışçının kendi sınırları bunu yalnızca daraltabilir, asla genişletemez. Tamamlanan bir görevin ürettiği makbuz, sonucu altında çalıştığı sınırlama kararına bağlar; böylece bir bakımcı aylar sonra bile işin gerçekte neye dokunmasına izin verildiğini denetleyebilir.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[Bağışçı kılavuzu](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) bir worker çalıştırmayı ve belirlediğiniz bütçeyi, [proje kılavuzu](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) bir manifest bildirmeyi anlatır, [tehdit modeli](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) ise her sınırın neyi koruyup neyi korumadığını belirtir. Tek komutluk çalıştırıcı henüz yayımlanmadı: bugün çalışan alt komutlar `verify`, `browse` ve `hub`.
 
 ### ön sayfanın ötesinde
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

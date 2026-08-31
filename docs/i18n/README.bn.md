@@ -117,7 +117,7 @@ bernstein verify receipt .sdd/runs/<run_id>/run-receipt.json  # verify it offlin
 শিডিউলার কেন সাদামাটা Python, আর তার বিনিময়ে কী ছাড়া হলো: [কেন ডিটারমিনিস্টিক](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md)।
 
 ### রোজকার কমান্ড
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 পুরো অপারেটর সারফেস (PR অটোমেশন, শিডিউল, চ্যাট ব্রিজ, autofix ডিমন) আছে [অপারেটর কমান্ডে](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md)।
 
+`bernstein workflow` এজেন্ট, কমান্ড ও লুপ নোডের ডিক্লারেটিভ YAML DAG চালায় - অসম্পূর্ণ রান আবার শুরু করার সমর্থন সহ:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+রান অবস্থা প্রতিটি নোডে `.sdd/runs/<run_id>/`-এ চেকপয়েন্ট হয়। রান আবার শুরু করার সময় রানের শুরুতে ম্যানিফেস্ট ডাইজেস্ট যাচাই করা হয়, তাই স্পেসিফিকেশন পরিবর্তন প্রত্যাখ্যান করা হয়, ভিন্ন একটি ম্যানিফেস্ট নীরবে চালানোর বদলে। দেখুন [ওয়ার্কফ্লো ম্যানিফেস্ট](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md)।
+
 রিপোজিটরি হাইজিন গেট: `bernstein readme-l10n verify` এমন PR ব্যর্থ করে যার অনূদিত README ইংরেজি উৎস থেকে সরে গেছে (এবং বাসি সেকশনটির নাম বলে দেয়), `bernstein readme-l10n sync` ইংরেজিতে সম্পাদনার পরে সেগুলো আবার বেঁধে দেয়। দেখুন [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md)।
 
 ### সমর্থিত এজেন্ট
@@ -138,6 +147,18 @@ bernstein stop                    # graceful shutdown with drain
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen এবং আরও অনেক। [অ্যাডাপ্টার সূচি](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) তাদের মধ্যে 30টির ইনস্টল কমান্ড রাখে। `bernstein integrations list` `src/bernstein/adapters/registry.py` থেকে জুড়ে দেওয়া 51টি ইন্টিগ্রেশনই তালিকাভুক্ত করে — কী রিজলভ হয় তার একমাত্র উৎস ওই ফাইলটিই। এর মধ্যে 49টি বেছে নেওয়ার মতো এজেন্ট অ্যাডাপ্টার; বাকি দুটি সারি হলো `mock` টেস্ট স্টাব আর `self-hosted-endpoints` এন্ডপয়েন্ট প্রোফাইল। `--prompt` ফ্ল্যাগ আছে এমন বাকি যেকোনো কিছু জেনেরিক র‍্যাপারের মধ্য দিয়ে চলে।
 
 একই রানে এজেন্ট মেশান: বয়লারপ্লেটের জন্য সস্তা লোকাল মডেল, আর্কিটেকচারের জন্য ভারী ক্লাউড মডেল। `bernstein integrations list --installed` দেখায় আপনার মেশিনে কী কী আছে।
+
+### স্বেচ্ছাসেবী কম্পিউট
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+একটি প্রকল্প issue-গুলিকে স্বেচ্ছাসেবকদের জন্য খোলা হিসেবে চিহ্নিত করতে পারে, আর যে কেউ তার একটি নিজের মেশিনে চালাতে পারেন - অ্যাকাউন্ট ছাড়া, সমন্বয়কারী ছাড়া। কোনো কাজকে কী করার অনুমতি আছে, প্রকল্প তা `volunteer.json` ম্যানিফেস্টে ঘোষণা করে - স্যান্ডবক্স ব্যাকএন্ড, অনুমোদিত নেটওয়ার্ক তালিকা, ওয়াল-ক্লক ও মেমরির সর্বোচ্চ সীমা - আর দাতার নিজের সীমা কেবল সেটিকে সংকীর্ণ করতে পারে, কখনও প্রসারিত নয়। সম্পন্ন কাজ যে রসিদ তৈরি করে তা ফলাফলকে সেই সীমাবদ্ধতার সিদ্ধান্তের সঙ্গে বেঁধে দেয় যার অধীনে সেটি চলেছিল, ফলে রক্ষণাবেক্ষণকারী মাসখানেক পরেও যাচাই করতে পারেন কাজটি আসলে কী স্পর্শ করার অনুমতি পেয়েছিল।
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[দাতা নির্দেশিকা](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) ওয়ার্কার চালানো ও আপনার নির্ধারিত বাজেট, [প্রকল্প নির্দেশিকা](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) ম্যানিফেস্ট ঘোষণা, এবং [হুমকি মডেল](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) প্রতিটি সীমানা কী রক্ষা করে আর কী করে না তা বর্ণনা করে। এক-কমান্ডের রানার এখনও প্রকাশিত হয়নি: আজ `verify`, `browse` ও `hub` কার্যকর সাব-কমান্ড।
 
 ### প্রথম পাতার বাইরে
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->

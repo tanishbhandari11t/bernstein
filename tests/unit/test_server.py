@@ -1916,7 +1916,16 @@ def test_read_cost_by_role_incremental_offset(tmp_path: Path) -> None:
     with metrics_jsonl.open("ab") as fh:
         fh.write(record2.encode())
 
-    mtime2 = metrics_jsonl.stat().st_mtime + 1
+    # Derive the second mtime from mtime1, not from a fresh stat(). A fresh
+    # stat() only yields a *different* mtime when the filesystem stamped the
+    # two writes distinctly, and Linux stamps inodes from a coarse cached
+    # clock (tick granularity, 1-10ms), so two writes microseconds apart
+    # routinely share one mtime. When they do, mtime2 == mtime1,
+    # _read_cost_by_role() takes its cache-hit branch and never parses
+    # record2 - the KeyError: 'qa' seen on main. Whether the two writes
+    # straddle a tick boundary depends on where in the tick the test starts,
+    # which is what made the failure order-dependent.
+    mtime2 = mtime1 + 1
     os.utime(metrics_jsonl, (mtime2, mtime2))
     store._cost_cache_mtime = mtime1  # simulate prior cached mtime
 
@@ -2083,6 +2092,94 @@ async def test_register_node(cluster_client: AsyncClient) -> None:
     assert data["name"] == "worker-1"
     assert data["status"] == "online"
     assert data["id"]
+
+
+@pytest.mark.anyio
+async def test_re_registering_the_same_node_updates_its_entry(cluster_client: AsyncClient) -> None:
+    """A worker that restarts must not become a second node (#3803).
+
+    ``register_node`` minted a fresh ``NodeInfo`` -- and so a fresh random id
+    -- on every call, so a worker that restarted three times left three
+    entries and ``cluster_summary`` counted its slots three times. The gRPC
+    handler already keys on name+url (#3796); this is the REST surface
+    catching up.
+
+    Asserted on the registry count *and* the capacity total, because a test
+    that only checked the second call returned 201 passes on the broken code.
+    """
+    first = await cluster_client.post("/cluster/nodes", json=NODE_PAYLOAD)
+    assert first.status_code == 201
+    first_id = first.json()["id"]
+
+    second = await cluster_client.post("/cluster/nodes", json=NODE_PAYLOAD)
+    assert second.status_code == 201
+    # The same worker, so the same entry: the id it was first given survives.
+    assert second.json()["id"] == first_id
+
+    listed = await cluster_client.get("/cluster/nodes")
+    assert len(listed.json()) == 1, "a restarting worker left a second entry"
+
+    status = await cluster_client.get("/cluster/status")
+    body = status.json()
+    assert body["total_nodes"] == 1
+    # The point of the bug: capacity counted once, not once per registration.
+    assert body["total_capacity"] == NODE_PAYLOAD["capacity"]["max_agents"]
+    assert body["available_slots"] == NODE_PAYLOAD["capacity"]["available_slots"]
+
+
+@pytest.mark.anyio
+async def test_a_different_node_still_registers_separately(cluster_client: AsyncClient) -> None:
+    """Only the *same* identity collapses -- two workers stay two entries.
+
+    Guards the over-correction: keying on name+url must not merge distinct
+    workers, which would under-report capacity instead of over-reporting it.
+    """
+    await cluster_client.post("/cluster/nodes", json=NODE_PAYLOAD)
+    other = {**NODE_PAYLOAD, "name": "worker-2", "url": "http://worker2:8052"}
+    await cluster_client.post("/cluster/nodes", json=other)
+
+    listed = await cluster_client.get("/cluster/nodes")
+    assert len(listed.json()) == 2
+
+    status = await cluster_client.get("/cluster/status")
+    assert status.json()["total_capacity"] == NODE_PAYLOAD["capacity"]["max_agents"] * 2
+
+
+@pytest.mark.anyio
+async def test_same_name_on_a_different_url_is_a_different_node(cluster_client: AsyncClient) -> None:
+    """Identity is name *and* url, so a redeployed worker on a new address is new.
+
+    Two hosts running a worker that shares a name is the ordinary case in a
+    cluster; collapsing them on name alone would hide one of them.
+    """
+    await cluster_client.post("/cluster/nodes", json=NODE_PAYLOAD)
+    moved = {**NODE_PAYLOAD, "url": "http://worker1-relocated:8052"}
+    await cluster_client.post("/cluster/nodes", json=moved)
+
+    listed = await cluster_client.get("/cluster/nodes")
+    assert len(listed.json()) == 2
+
+
+@pytest.mark.anyio
+async def test_re_registering_refreshes_the_reported_capacity(cluster_client: AsyncClient) -> None:
+    """The updated entry carries the *new* capacity, not the stale one.
+
+    Re-registration exists so a worker can report what it can do now; keeping
+    the id but also keeping the old capacity would trade one wrong total for
+    another.
+    """
+    await cluster_client.post("/cluster/nodes", json=NODE_PAYLOAD)
+    grown = {
+        **NODE_PAYLOAD,
+        "capacity": {**NODE_PAYLOAD["capacity"], "max_agents": 8, "available_slots": 8},
+    }
+    await cluster_client.post("/cluster/nodes", json=grown)
+
+    status = await cluster_client.get("/cluster/status")
+    body = status.json()
+    assert body["total_nodes"] == 1
+    assert body["total_capacity"] == 8
+    assert body["available_slots"] == 8
 
 
 @pytest.mark.anyio

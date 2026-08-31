@@ -106,6 +106,7 @@ test, and a row naming a command the CLI no longer registers fails it too.
 | Agent trust tiers | Brief | 3 | `bernstein agents trust`; tiers accrue from task outcomes in `.sdd/trust/` and map to an `AgentPermissions` profile (`core/agents/agent_trust.py`) |
 | [Volunteer project manifest](volunteer-manifest.md) | Full | 3 | A project's opt-in policy — OSI licence, acceptance gates, path scope, egress, sandbox floor — loaded and content-addressed by `core/volunteer/manifest.py`; validate one with `bernstein volunteer verify` |
 | [Volunteer sandbox profile](volunteer-sandbox.md) | Full | 3 | Deny-all-egress containment derived from the manifest and the donor's own limits; refusals are records, not log lines (`core/volunteer/sandbox_profile.py`) |
+| [Volunteer donor budgets](volunteer-budget.md) | Full | 3 | Permanent machine-local task, wall-clock, token, size, and local-model claim limits with atomic restart-safe accounting and signed receipt line items (`core/volunteer/budget.py`) |
 | [Volunteer issue text](volunteer-issue-text.md) | Full | 3 | Untrusted issue title and body normalised into one delimited block before it becomes an agent prompt — HTML comments (closed and unterminated) stripped, invisible and bidirectional characters dropped, NFKC, and a content-derived fence the text cannot forge (`core/volunteer/issue_sanitize.py`) |
 
 ## Verifiability and provenance
@@ -229,6 +230,7 @@ test, and a row naming a command the CLI no longer registers fails it too.
 |---|---|---|---|
 | `bernstein -g GOAL` | Full | 3 | Inline goal |
 | `bernstein run plan.yaml` | Full | 3 | Plan file execution |
+| `bernstein gc cas` | Full | 3 | Mark and sweep unreferenced blobs from the CAS store |
 | `bernstein init` | Full | 3 | Workspace setup. The documented first run is covered by `tests/integration/test_first_run_documented_path.py`, which runs the command from an empty directory and asserts the created artifacts plus the key output lines documented in `first-run.md`. |
 | `bernstein stop` | Full | 3 | Graceful/force stop |
 | `bernstein live` | Full | 3 | TUI dashboard. Readiness is the first rendered frame, identified by the `AGENTS` and `TASKS` pane headers; `tests/integration/test_first_run_long_running_surfaces.py` starts it from an empty workspace, waits for that frame, and asserts a traceback-free exit on `SIGINT`. |
@@ -332,6 +334,7 @@ test, and a row naming a command the CLI no longer registers fails it too.
 | `bernstein identity keydir/decode/verify` | Full | 4 | Print the JWKS key directory and decode/verify install identity |
 | [`bernstein pool register/list/show/verify`](../operations/sandbox-pools.md) | Full | 3 | Manage lease-backed named resource pools |
 | [`bernstein volunteer verify`](volunteer-manifest.md) | Full | 3 | Validate a project's `.bernstein/volunteer.json` and print the manifest digest a receipt binds to |
+| [`bernstein volunteer budget`](volunteer-budget.md) | Full | 3 | Set or inspect persistent donor limits and completed/in-flight usage |
 
 ## Cloud / Cloudflare
 > **How a row graduates:** A row graduates out of Preview when its maturity score increases to ≥ 3 (or when a first-run smoke test lands and the marker is intentionally removed).

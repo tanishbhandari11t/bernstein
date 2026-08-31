@@ -673,6 +673,15 @@ EVENT_INTENT_JOURNAL_SEAL = "intent.journal_seal"
 #: are recorded -- never task prompts or agent output.
 EVENT_EVAL_GATE_VERDICT = "eval.gate_verdict"
 
+#: Issue #3759 -- emitted once per sealed fan-out receipt
+#: (``build_run_graph_receipt``). The event binds the receipt hash (the CAS
+#: identity of the full receipt), the graph root hash, the per-node hashes,
+#: and the spine journal entry hash so a verifier can prove, from the chain
+#: alone, that the exact set of N branches came from one fan-out, anchored by
+#: a single signed object. Only hashes and the anchor are recorded -- never
+#: the raw worktree or spine content.
+EVENT_RUN_GRAPH_SEALED = "run_graph.sealed"
+
 #: Issue #2520 -- emitted when a significant_regression verdict at canary or
 #: default rolls a candidate configuration back. The revocation receipt names
 #: the content hashes of the verdict receipts it revokes and the stage the
@@ -2257,6 +2266,50 @@ def record_gate_adjudication(
             "rubric_hash": rubric_hash,
             "panel_config_hash": panel_config_hash,
             "final_verdict": final_verdict,
+            "journal_entry_hash": journal_entry_hash,
+        },
+    )
+
+
+def record_run_graph_receipt(
+    *,
+    chain: AuditChainStore,
+    receipt_hash: str,
+    graph_root_hash: str,
+    node_hashes: tuple[str, ...],
+    timestamp: int,
+    journal_entry_hash: str = "",
+    actor: str = "bernstein.run_graph",
+) -> AuditEvent:
+    """Append a ``run_graph.sealed`` event into *chain* (#3759).
+
+    Mirrors one sealed fan-out receipt into the HMAC chain so an operator can
+    prove, from the chain alone, that the exact set of N branches came from one
+    fan-out, anchored by a single signed object. Only hashes and the anchor are
+    recorded -- never the raw worktree or spine content.
+
+    Args:
+        chain: The audit chain store accepting the entry.
+        receipt_hash: Content hash pinning the whole run-graph receipt.
+        graph_root_hash: The RunGraph root hash that was sealed.
+        node_hashes: Deterministic hashes of each node in the sealed graph.
+        timestamp: Integer timestamp when the receipt was sealed.
+        journal_entry_hash: Lineage-spine entry hash anchoring the sealed receipt.
+        actor: Recorded actor; defaults to ``"bernstein.run_graph"``.
+
+    Returns:
+        The recorded :class:`AuditEvent` with ``prev_chain_digest`` embedded.
+    """
+    return chain.log_with_prev_digest(
+        event_type=EVENT_RUN_GRAPH_SEALED,
+        actor=actor,
+        resource_type="run_graph_receipt",
+        resource_id=receipt_hash,
+        details={
+            "receipt_hash": receipt_hash,
+            "graph_root_hash": graph_root_hash,
+            "node_hashes": list(node_hashes),
+            "timestamp": timestamp,
             "journal_entry_hash": journal_entry_hash,
         },
     )
@@ -6361,6 +6414,12 @@ def record_provenance_quarantine(
 #: must never be reordered or removed.
 EVENT_STEERING_RECEIPT = "steering.receipt"
 
+#: Emitted when a steer.* message is consumed but its receipt_hash has no
+#: matching steering.receipt event on the audit chain. The refusal itself
+#: is an audit-chain event so a steered run is distinguishable from a
+#: tampered one.
+EVENT_STEERING_REJECTION = "steering.rejection"
+
 
 def record_steering_receipt(
     *,
@@ -6416,6 +6475,61 @@ def record_steering_receipt(
             "principal": principal,
             "scope": scope,
             "payload_hash": payload_hash,
+        },
+    )
+
+
+def record_steering_rejection(
+    *,
+    chain: AuditChainStore,
+    task_id: str,
+    mailbox_seq: int,
+    kind: str,
+    receipt_hash: str,
+    payload_hash: str,
+    entry_hash: str,
+    body_hash: str,
+    reason: str,
+    actor: str = "fleet_steering",
+) -> AuditEvent:
+    """Append a ``steering.rejection`` event into *chain* (#2508).
+
+    The receipt-gate at consumption time refuses a ``steer.*`` message when
+    its body does not reference a chain-attested ``steering.receipt`` event.
+    The refusal itself is bound into the HMAC chain, so a steered run with
+    a missing receipt is distinguishable from a tampered one: the journal
+    records what was refused, the chain records the refusal, and the
+    receipt it expected is absent.
+
+    Args:
+        chain: The audit chain store accepting the entry.
+        task_id: The steered task the rejected message addressed.
+        mailbox_seq: The mailbox chain position of the rejected message.
+        kind: The steering kind (``pause``/``resume``/etc.).
+        receipt_hash: The ``receipt_hash`` the rejected message declared.
+        payload_hash: The ``payload_hash`` the rejected message declared.
+        entry_hash: The mailbox entry hash of the rejected message.
+        body_hash: The body hash of the rejected message.
+        reason: The refusal reason (e.g. ``"missing_receipt_hash"``).
+        actor: Recorded actor; defaults to ``"fleet_steering"``.
+
+    Returns:
+        The recorded :class:`AuditEvent`.
+    """
+    return chain.log_with_prev_digest(
+        event_type=EVENT_STEERING_REJECTION,
+        actor=actor,
+        resource_type="steering_command",
+        resource_id=task_id,
+        details={
+            "task_id": task_id,
+            "mailbox_seq": mailbox_seq,
+            "kind": kind,
+            "receipt_hash": receipt_hash,
+            "payload_hash": payload_hash,
+            "entry_hash": entry_hash,
+            "body_hash": body_hash,
+            "reason": reason,
         },
     )
 
@@ -8722,6 +8836,7 @@ __all__ = [
     "EVENT_RUN_ARTIFACT",
     "EVENT_RUN_ARTIFACT_REFUSED",
     "EVENT_RUN_CLOSURE",
+    "EVENT_RUN_GRAPH_SEALED",
     "EVENT_RUN_LIFECYCLE",
     "EVENT_RUN_SSH_TASK",
     "EVENT_SCHEDULE_COLLISION",

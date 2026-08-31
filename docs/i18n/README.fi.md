@@ -117,7 +117,7 @@ Jokainen tavoite etenee neljän vaiheen läpi:
 Miksi aikatauluttaja on toteutettu puhtaalla Pythonilla ja mitä kompromisseja siihen liittyy: [miksi deterministinen](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/architecture/WHY_DETERMINISTIC.md).
 
 ### arkipäiväiset komennot
-<!-- l10n: en="everyday commands" hash="sha256:b3520027ef7d" -->
+<!-- l10n: en="everyday commands" hash="sha256:7d149b09b9bc" -->
 
 ```bash
 cd your-project
@@ -130,6 +130,15 @@ bernstein stop                    # graceful shutdown with drain
 
 Koko operaattoripinta (PR-automaatio, aikataulut, chat-sillat, autofix-taustaprosessi) löytyy sivulta [operaattorin komennot](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/commands.md).
 
+`bernstein workflow` ajaa deklaratiivisia YAML DAG -rakenteita, jotka koostuvat agentti-, komento- ja silmukkasolmuista - tukien keskeytyneiden ajojen jatkamista:
+
+```bash
+bernstein workflow run idea-to-pr -g "Add JWT auth"   # prints run_id
+bernstein workflow resume <run_id>                    # picks up at the first non-completed node
+```
+
+Ajon tila tallennetaan tarkistuspisteenä hakemistoon `.sdd/runs/<run_id>/` jokaisessa solmussa. Jatkaminen vahvistaa manifestin tiivisteen ajon alussa, joten spesifikaatiomuutos hylätään sen sijaan, että eri manifesti suoritettaisiin hiljaisesti. Katso [workflow-manifestit](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/operations/workflows.md).
+
 Koodihygieniaportit: `bernstein readme-l10n verify` hylkää PR:n, jonka käännetyt README-tiedostot poikkeavat englanninkielisestä lähteestä (nimetten vanhentuneen osion), ja `bernstein readme-l10n sync` päivittää sidokset englanninkielisten muokkausten jälkeen. Katso [readme-l10n](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/playbooks/readme-l10n.md).
 
 ### tuetut agentit
@@ -138,6 +147,18 @@ Koodihygieniaportit: `bernstein readme-l10n verify` hylkää PR:n, jonka käänn
 Claude Code, Codex CLI, Gemini CLI, GitHub Copilot CLI, Cursor, Aider, Goose, Muse Code, OpenAI Agents SDK, Amp, Cody, Continue, Devin Terminal, Junie, Kilo, Kiro, AWS Q Developer, Ollama, OpenCode, OpenHands, Open Interpreter, gptme, Plandex, AIChat, Letta Code, Qwen ja muita. [Sovitinindeksi](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/adapters/index.md) sisältää asennuskomennot 30 agentille. `bernstein integrations list` luettelee kaikki 51 kytkettyä integraatiota tiedostosta `src/bernstein/adapters/registry.py`, joka on ainoa totuuden lähde. 49 niistä on valittavia agenttisovittimia; kaksi muuta riviä ovat testivastine `mock` ja päätepisteprofiili `self-hosted-endpoints`. Kaikki muut työkalut, joissa on `--prompt`-valitsin, toimivat yleisen kääreen kautta.
 
 Yhdistele agentteja samassa ajossa: edullisia paikallisia malleja rutiinikoodiin, raskaampia pilvimalleja arkkitehtuuriin. `bernstein integrations list --installed` näyttää koneellasi käytettävissä olevat työkalut.
+
+### vapaaehtoinen laskentateho
+<!-- l10n: en="volunteer compute" hash="sha256:f0bd4a22affd" -->
+
+Projekti voi merkitä tiketit vapaaehtoisille avoimiksi, ja kuka tahansa voi ajaa yhden niistä omalla koneellaan ilman tiliä ja ilman koordinaattoria. Sen, mitä tehtävä saa tehdä, projekti ilmoittaa `volunteer.json`-manifestissa - hiekkalaatikon taustaosa, sallittujen verkko-osoitteiden lista, seinäkelloajan ja muistin katot - ja lahjoittajan omat rajat voivat vain kaventaa tätä, eivät koskaan laajentaa. Valmiin tehtävän tuottama kuitti sitoo tuloksen siihen eristyspäätökseen, jonka alla se ajettiin, joten ylläpitäjä voi kuukausienkin päästä tarkistaa, mihin työllä todella oli lupa koskea.
+
+```bash
+bernstein volunteer verify .
+bernstein volunteer browse --budget 60
+```
+
+[Lahjoittajan opas](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/donor-guide.md) käsittelee workerin ajamisen ja asettamasi budjetin, [projektin opas](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/project-guide.md) manifestin ilmoittamisen, ja [uhkamalli](https://github.com/sipyourdrink-ltd/bernstein/blob/main/docs/volunteer/threat-model.md) kertoo, miltä kukin raja suojaa ja miltä ei. Yhden komennon ajuria ei ole vielä julkaistu: tänään toimivat alikomennot ovat `verify`, `browse` ja `hub`.
 
 ### etusivun lisäksi
 <!-- l10n: en="beyond the front page" hash="sha256:ee01fbaaebd6" -->
